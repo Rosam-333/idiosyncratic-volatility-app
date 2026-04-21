@@ -20,17 +20,19 @@ st.write(
 )
 
 if gif_path.exists():
-    st.image(str(gif_path), caption="Finance-themed intro", use_container_width=True)
-else:
-    st.info(
-        "Optional: add a file named `finance.gif` in this folder to show a finance-themed GIF here."
-    )
+    st.image(str(gif_path), caption="Finance-themed intro", width="stretch")
 
 st.sidebar.header("Inputs")
-ticker = st.sidebar.text_input("Stock ticker", value="AAPL").upper().strip()
-start_date = st.sidebar.date_input("Start date", value=pd.to_datetime("2020-01-01"))
-end_date = st.sidebar.date_input("End date", value=pd.to_datetime("2025-12-31"))
-rolling_window = st.sidebar.slider("Rolling window (days)", 20, 120, 30)
+with st.sidebar.form("analysis_form"):
+    ticker = st.text_input("Stock ticker", value="AAPL").upper().strip()
+    start_date = st.date_input("Start date", value=pd.to_datetime("2020-01-02"))
+    end_date = st.date_input("End date", value=pd.to_datetime("2025-12-31"))
+    rolling_window = st.slider("Rolling window (days)", 20, 120, 30)
+    submitted = st.form_submit_button("Submit")
+
+if not submitted:
+    st.info("Choose the inputs in the sidebar and click Submit to load the analysis.")
+    st.stop()
 
 if start_date >= end_date:
     st.error("Start date must be earlier than end date.")
@@ -83,6 +85,17 @@ data = load_data(ticker, market_ticker, start_date, end_date)
 if data is None or data.empty:
     st.error("No data was downloaded. Please check the ticker and date range.")
     st.stop()
+
+actual_start = data.index.min().date()
+actual_end = data.index.max().date()
+if actual_start > start_date:
+    st.info(
+        f"Market data did not start exactly on {start_date}. The analysis begins on the next available trading day: {actual_start}."
+    )
+if actual_end < end_date:
+    st.info(
+        f"Market data did not extend exactly to {end_date}. The analysis ends on the most recent available trading day: {actual_end}."
+    )
 
 X = sm.add_constant(data["market_return"])
 y = data["stock_return"]
@@ -144,7 +157,7 @@ price_fig.add_trace(
     go.Scatter(x=data.index, y=data["market_close"], mode="lines", name=market_ticker)
 )
 price_fig.update_layout(xaxis_title="Date", yaxis_title="Price")
-st.plotly_chart(price_fig, use_container_width=True)
+st.plotly_chart(price_fig, width="stretch")
 
 st.subheader("Stock vs Market Daily Returns")
 scatter_fig = go.Figure()
@@ -161,7 +174,7 @@ scatter_fig.update_layout(
     xaxis_title="Market Return (SPY)",
     yaxis_title=f"{ticker} Return",
 )
-st.plotly_chart(scatter_fig, use_container_width=True)
+st.plotly_chart(scatter_fig, width="stretch")
 
 st.subheader("Rolling Idiosyncratic Volatility")
 rolling_fig = go.Figure()
@@ -177,7 +190,7 @@ rolling_fig.update_layout(
     xaxis_title="Date",
     yaxis_title="Annualized Idiosyncratic Volatility",
 )
-st.plotly_chart(rolling_fig, use_container_width=True)
+st.plotly_chart(rolling_fig, width="stretch")
 
 st.subheader("Regression Table")
 results_df = pd.DataFrame(
@@ -191,7 +204,7 @@ results_df = pd.DataFrame(
         "Value": [alpha_daily, beta, r_squared, idio_vol_daily],
     }
 )
-st.dataframe(results_df, use_container_width=True)
+st.dataframe(results_df, width="stretch")
 
 st.caption(
     "Method: CAPM-style regression of stock daily returns on SPY daily returns. "
