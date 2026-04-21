@@ -20,7 +20,7 @@ st.write(
 )
 
 if gif_path.exists():
-    st.image(str(gif_path), caption="Finance-themed intro", width="stretch")
+    st.image(str(gif_path), caption="Finance-themed intro", use_container_width=True)
 
 st.sidebar.header("Inputs")
 with st.sidebar.form("analysis_form"):
@@ -157,7 +157,7 @@ price_fig.add_trace(
     go.Scatter(x=data.index, y=data["market_close"], mode="lines", name=market_ticker)
 )
 price_fig.update_layout(xaxis_title="Date", yaxis_title="Price")
-st.plotly_chart(price_fig, width="stretch")
+st.plotly_chart(price_fig, use_container_width=True)
 
 st.subheader("Stock vs Market Daily Returns")
 scatter_fig = go.Figure()
@@ -174,7 +174,7 @@ scatter_fig.update_layout(
     xaxis_title="Market Return (SPY)",
     yaxis_title=f"{ticker} Return",
 )
-st.plotly_chart(scatter_fig, width="stretch")
+st.plotly_chart(scatter_fig, use_container_width=True)
 
 st.subheader("Rolling Idiosyncratic Volatility")
 rolling_fig = go.Figure()
@@ -190,7 +190,7 @@ rolling_fig.update_layout(
     xaxis_title="Date",
     yaxis_title="Annualized Idiosyncratic Volatility",
 )
-st.plotly_chart(rolling_fig, width="stretch")
+st.plotly_chart(rolling_fig, use_container_width=True)
 
 st.subheader("Regression Table")
 results_df = pd.DataFrame(
@@ -204,7 +204,7 @@ results_df = pd.DataFrame(
         "Value": [alpha_daily, beta, r_squared, idio_vol_daily],
     }
 )
-st.dataframe(results_df, width="stretch")
+st.dataframe(results_df, use_container_width=True)
 
 st.caption(
     "Method: CAPM-style regression of stock daily returns on SPY daily returns. "
