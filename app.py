@@ -55,6 +55,31 @@ def extract_close(downloaded_df):
 
 
 @st.cache_data
+def get_company_profile(stock_ticker):
+    try:
+        info = yf.Ticker(stock_ticker).info
+    except Exception:
+        return {
+            "name": stock_ticker,
+            "sector": None,
+            "industry": None,
+        }
+
+    if not isinstance(info, dict):
+        return {
+            "name": stock_ticker,
+            "sector": None,
+            "industry": None,
+        }
+
+    return {
+        "name": info.get("longName") or info.get("shortName") or stock_ticker,
+        "sector": info.get("sector"),
+        "industry": info.get("industry"),
+    }
+
+
+@st.cache_data
 def load_data(stock_ticker, market_symbol, start, end):
     stock = yf.download(stock_ticker, start=start, end=end, auto_adjust=True, progress=False)
     market = yf.download(market_symbol, start=start, end=end, auto_adjust=True, progress=False)
@@ -80,11 +105,22 @@ def load_data(stock_ticker, market_symbol, start, end):
     return data
 
 
+company_profile = get_company_profile(ticker)
 data = load_data(ticker, market_ticker, start_date, end_date)
 
 if data is None or data.empty:
     st.error("No data was downloaded. Please check the ticker and date range.")
     st.stop()
+
+st.markdown(f"**Selected Company:** {company_profile['name']} (`{ticker}`)")
+
+profile_parts = []
+if company_profile.get("sector"):
+    profile_parts.append(f"**Sector:** {company_profile['sector']}")
+if company_profile.get("industry"):
+    profile_parts.append(f"**Industry:** {company_profile['industry']}")
+if profile_parts:
+    st.markdown(" | ".join(profile_parts))
 
 actual_start = data.index.min().date()
 actual_end = data.index.max().date()
