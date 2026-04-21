@@ -40,6 +40,43 @@ if start_date >= end_date:
     st.stop()
 
 market_ticker = "SPY"
+FALLBACK_COMPANY_PROFILES = {
+    "AAPL": {
+        "name": "Apple Inc.",
+        "sector": "Technology",
+        "industry": "Consumer Electronics",
+    },
+    "MSFT": {
+        "name": "Microsoft Corporation",
+        "sector": "Technology",
+        "industry": "Software - Infrastructure",
+    },
+    "TSLA": {
+        "name": "Tesla, Inc.",
+        "sector": "Consumer Cyclical",
+        "industry": "Auto Manufacturers",
+    },
+    "AMZN": {
+        "name": "Amazon.com, Inc.",
+        "sector": "Consumer Cyclical",
+        "industry": "Internet Retail",
+    },
+    "GOOGL": {
+        "name": "Alphabet Inc.",
+        "sector": "Communication Services",
+        "industry": "Internet Content & Information",
+    },
+    "META": {
+        "name": "Meta Platforms, Inc.",
+        "sector": "Communication Services",
+        "industry": "Internet Content & Information",
+    },
+    "NVDA": {
+        "name": "NVIDIA Corporation",
+        "sector": "Technology",
+        "industry": "Semiconductors",
+    },
+}
 
 
 def extract_close(downloaded_df):
@@ -62,11 +99,14 @@ def get_company_profile(stock_ticker):
         price_info = ticker_data.price.get(stock_ticker, {})
         asset_profile = ticker_data.asset_profile.get(stock_ticker, {})
     except Exception:
-        return {
-            "name": stock_ticker,
-            "sector": None,
-            "industry": None,
-        }
+        return FALLBACK_COMPANY_PROFILES.get(
+            stock_ticker,
+            {
+                "name": stock_ticker,
+                "sector": None,
+                "industry": None,
+            },
+        )
 
     if not isinstance(price_info, dict):
         price_info = {}
@@ -74,17 +114,28 @@ def get_company_profile(stock_ticker):
         asset_profile = {}
 
     if not price_info and not asset_profile:
-        return {
-            "name": stock_ticker,
-            "sector": None,
-            "industry": None,
-        }
+        return FALLBACK_COMPANY_PROFILES.get(
+            stock_ticker,
+            {
+                "name": stock_ticker,
+                "sector": None,
+                "industry": None,
+            },
+        )
 
-    return {
+    profile = {
         "name": price_info.get("longName") or price_info.get("shortName") or stock_ticker,
         "sector": asset_profile.get("sector"),
         "industry": asset_profile.get("industry"),
     }
+    fallback = FALLBACK_COMPANY_PROFILES.get(stock_ticker, {})
+    if not profile["name"] or profile["name"] == stock_ticker:
+        profile["name"] = fallback.get("name", stock_ticker)
+    if not profile["sector"]:
+        profile["sector"] = fallback.get("sector")
+    if not profile["industry"]:
+        profile["industry"] = fallback.get("industry")
+    return profile
 
 
 @st.cache_data
@@ -119,6 +170,13 @@ data = load_data(ticker, market_ticker, start_date, end_date)
 if data is None or data.empty:
     st.error("No data was downloaded. Please check the ticker and date range.")
     st.stop()
+
+st.sidebar.markdown("---")
+st.sidebar.markdown(f"**Company:** {company_profile['name']}")
+if company_profile.get("sector"):
+    st.sidebar.markdown(f"**Sector:** {company_profile['sector']}")
+if company_profile.get("industry"):
+    st.sidebar.markdown(f"**Industry:** {company_profile['industry']}")
 
 st.markdown(f"**Selected Company:** {company_profile['name']} (`{ticker}`)")
 
