@@ -5,6 +5,8 @@ import numpy as np
 import plotly.graph_objects as go
 import statsmodels.api as sm
 from pathlib import Path
+from io import StringIO
+import requests
 from yahooquery import Ticker as YahooQueryTicker
 
 
@@ -93,13 +95,37 @@ def extract_close(downloaded_df):
 
 
 @st.cache_data
+def get_sp500_reference():
+    url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+    try:
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
+        response.raise_for_status()
+        table = pd.read_html(StringIO(response.text))[0]
+    except Exception:
+        return {}
+
+    reference = {}
+    for _, row in table.iterrows():
+        symbol = str(row["Symbol"]).replace(".", "-")
+        reference[symbol] = {
+            "name": row.get("Security"),
+            "sector": row.get("GICS Sector"),
+            "industry": row.get("GICS Sub-Industry"),
+        }
+    return reference
+
+
+@st.cache_data
 def get_company_profile(stock_ticker):
+    sp500_reference = get_sp500_reference()
+    reference_profile = sp500_reference.get(stock_ticker, {})
+
     try:
         ticker_data = YahooQueryTicker(stock_ticker, asynchronous=False, validate=True, progress=False)
         price_info = ticker_data.price.get(stock_ticker, {})
         asset_profile = ticker_data.asset_profile.get(stock_ticker, {})
     except Exception:
-        return FALLBACK_COMPANY_PROFILES.get(
+        return reference_profile or FALLBACK_COMPANY_PROFILES.get(
             stock_ticker,
             {
                 "name": stock_ticker,
@@ -114,7 +140,7 @@ def get_company_profile(stock_ticker):
         asset_profile = {}
 
     if not price_info and not asset_profile:
-        return FALLBACK_COMPANY_PROFILES.get(
+        return reference_profile or FALLBACK_COMPANY_PROFILES.get(
             stock_ticker,
             {
                 "name": stock_ticker,
@@ -128,7 +154,7 @@ def get_company_profile(stock_ticker):
         "sector": asset_profile.get("sector"),
         "industry": asset_profile.get("industry"),
     }
-    fallback = FALLBACK_COMPANY_PROFILES.get(stock_ticker, {})
+    fallback = reference_profile or FALLBACK_COMPANY_PROFILES.get(stock_ticker, {})
     if not profile["name"] or profile["name"] == stock_ticker:
         profile["name"] = fallback.get("name", stock_ticker)
     if not profile["sector"]:
