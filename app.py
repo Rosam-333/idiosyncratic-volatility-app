@@ -5,6 +5,7 @@ import numpy as np
 import plotly.graph_objects as go
 import statsmodels.api as sm
 from pathlib import Path
+from yahooquery import Ticker as YahooQueryTicker
 
 
 st.set_page_config(page_title="Idiosyncratic Volatility Analyzer", layout="wide")
@@ -57,7 +58,9 @@ def extract_close(downloaded_df):
 @st.cache_data
 def get_company_profile(stock_ticker):
     try:
-        info = yf.Ticker(stock_ticker).info
+        ticker_data = YahooQueryTicker(stock_ticker, asynchronous=False, validate=True, progress=False)
+        price_info = ticker_data.price.get(stock_ticker, {})
+        asset_profile = ticker_data.asset_profile.get(stock_ticker, {})
     except Exception:
         return {
             "name": stock_ticker,
@@ -65,7 +68,12 @@ def get_company_profile(stock_ticker):
             "industry": None,
         }
 
-    if not isinstance(info, dict):
+    if not isinstance(price_info, dict):
+        price_info = {}
+    if not isinstance(asset_profile, dict):
+        asset_profile = {}
+
+    if not price_info and not asset_profile:
         return {
             "name": stock_ticker,
             "sector": None,
@@ -73,9 +81,9 @@ def get_company_profile(stock_ticker):
         }
 
     return {
-        "name": info.get("longName") or info.get("shortName") or stock_ticker,
-        "sector": info.get("sector"),
-        "industry": info.get("industry"),
+        "name": price_info.get("longName") or price_info.get("shortName") or stock_ticker,
+        "sector": asset_profile.get("sector"),
+        "industry": asset_profile.get("industry"),
     }
 
 
