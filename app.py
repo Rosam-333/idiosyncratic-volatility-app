@@ -1,12 +1,13 @@
 """
-Bob Cat Risk Lab — Core / original scope (separate entry point).
+Bob Cat Risk Lab — Core / original scope (default entry point).
 
-Run:  streamlit run app_classic.py
+Run:  streamlit run app.py
+     (same app: streamlit run app_classic.py — useful if you keep both names in docs)
 
 CAPM-style rolling idiosyncratic volatility, compare, S&P screener, and Yahoo Finance
 headlines only (no Google News, RSS wire harvest, regional papers, or central-bank layer).
 
-For the full extended app:  streamlit run app.py
+Extended build (multi-source news, prediction details, sense-check):  streamlit run app_extended.py
 """
 
 import streamlit as st
@@ -41,8 +42,8 @@ st.set_page_config(page_title="Bob Cat Risk Lab (Core)", layout="wide")
 st.markdown("### Group: Bob Cat")
 st.title("Bob Cat Risk Lab — Core (original scope)")
 st.caption(
-    "**Separate app** from the extended build. This version uses **Yahoo Finance headlines only**. "
-    "Run `streamlit run app.py` for multi-source news, policy/central-bank context, and prediction verification."
+    "**Core build** — **Yahoo Finance headlines only.** "
+    "For multi-source news, policy/central-bank context, prediction details, and forward sense-check, run **`streamlit run app_extended.py`**."
 )
 
 
@@ -465,4 +466,4 @@ else:
             benchmark_ticker,
         )
 
-st.caption("Core app: CAPM residual IVOL methodology matches the extended `app.py`; news inputs differ.")
+st.caption("Core app: CAPM residual IVOL methodology matches **`app_extended.py`**; news inputs differ.")
