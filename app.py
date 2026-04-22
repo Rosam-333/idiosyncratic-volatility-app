@@ -863,17 +863,42 @@ def render_original_dashboard(asset_name, asset_ticker, profile, benchmark_label
 
 initialize_app_state()
 
+stock_catalog = get_stock_catalog()
+stock_labels = stock_catalog["label"].tolist()
+stock_label_to_ticker = dict(zip(stock_catalog["label"], stock_catalog["ticker"]))
+default_label = next((lab for lab in stock_labels if lab.endswith("(AAPL)")), stock_labels[0] if stock_labels else "")
+try:
+    _default_idx = stock_labels.index(default_label)
+except ValueError:
+    _default_idx = 0
+
 st.sidebar.header("Inputs")
 with st.sidebar.form("ivol_form"):
-    ticker_in = st.text_input("Stock ticker", value="AAPL")
+    company_label = st.selectbox(
+        "Search company name (S&P 500)",
+        stock_labels,
+        index=_default_idx,
+        help="Pick a company; the app uses its Yahoo ticker. For symbols outside this list, use the box below.",
+    )
+    manual_ticker = st.text_input(
+        "Or enter any ticker",
+        placeholder="e.g. NVDA, BRK-B",
+        help="If you type here, this ticker is used instead of the company selected above.",
+    )
     start_date = st.date_input("Start date", value=pd.Timestamp("2020-01-02").date())
-    end_date = st.date_input("End date", value=pd.Timestamp("2025-12-31").date())
+    end_date = st.date_input(
+        "End date",
+        value=date.today(),
+        help="End of sample through this calendar date. Prices load through the latest available trading day up to this date (typically through today if you pick today).",
+    )
     rolling_window = st.slider("Rolling window (days)", 20, 120, 30)
     submitted = st.form_submit_button("Submit")
 
 if submitted:
+    raw_manual = (manual_ticker or "").strip()
+    ticker_resolved = _normalize_ticker(raw_manual) if raw_manual else stock_label_to_ticker[company_label]
     st.session_state["analysis_request"] = {
-        "ticker": _normalize_ticker(ticker_in),
+        "ticker": ticker_resolved,
         "start_date": start_date,
         "end_date": end_date,
         "rolling_window": rolling_window,
@@ -910,6 +935,10 @@ st.sidebar.markdown("---")
 st.sidebar.markdown(f"**Ticker:** `{ticker}`")
 if profile.get("name"):
     st.sidebar.markdown(f"**Name:** {profile['name']}")
+if profile.get("sector"):
+    st.sidebar.markdown(f"**Sector:** {profile['sector']}")
+if profile.get("industry"):
+    st.sidebar.markdown(f"**Industry:** {profile['industry']}")
 
 render_date_messages(metrics, start_date, end_date)
 render_original_dashboard(profile["name"], ticker, profile, STOCK_MARKET_BENCHMARK, enriched, metrics)
