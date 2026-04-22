@@ -8,8 +8,6 @@ Self-contained for Streamlit Cloud (engine inlined from `bobcat_lab_core.py`).
 Refresh bundle after core edits:  python _merge_app_core.py
 
 Run: streamlit run app.py
-Prediction + Yahoo outlook: streamlit run app_prediction.py
-Full multi-source + prediction details: streamlit run app_extended.py
 """
 
 # --- Shared engine (bobcat_lab_core) ---
@@ -746,9 +744,6 @@ st.title("Idiosyncratic Volatility Analyzer")
 st.write(
     f"This app estimates a stock's idiosyncratic volatility using a CAPM-style regression against the market benchmark **{STOCK_MARKET_BENCHMARK}**."
 )
-st.caption(
-    "**Original build:** quantitative IVOL only. For **Yahoo headlines + educational outlook** run **`app_prediction.py`**. For **multi-source news + prediction page + sense-check** run **`app_extended.py`**."
-)
 
 
 def _normalize_ticker(raw: str) -> str:
@@ -943,4 +938,4 @@ if profile.get("industry"):
 render_date_messages(metrics, start_date, end_date)
 render_original_dashboard(profile["name"], ticker, profile, STOCK_MARKET_BENCHMARK, enriched, metrics)
 
-st.caption("Created by rosam-103 · Original IVOL analyzer (CAPM residuals vs SPY) — no news or outlook")
+st.caption("Created by rosam-103 · Idiosyncratic volatility vs SPY (CAPM residuals)")
